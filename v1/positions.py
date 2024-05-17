@@ -4,6 +4,7 @@ from math import sqrt
 def d(a, b):
     return sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2)
 
+
 def mprint(m):
     print(*([round(v, 1) if type(v) in (float, int) else '*' for v in row] for row in m), sep="\n", end="\n\n")
 
