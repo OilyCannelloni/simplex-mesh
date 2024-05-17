@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from functools import reduce
 from math import sqrt
 from random import sample, normalvariate
+import sortedcontainers
 
 from algorithm import simplex_diagonal
 
@@ -30,24 +31,22 @@ class NetworkMeasurement:
 
 class DistanceSet:
     def __init__(self, dist=None, true=None):
-        self._set = []
+        self._set = sortedcontainers.SortedList()
         self.cached_value = dist
-        self.bounding_box = None
         self.true = true
 
     def __str__(self):
         if self.cached_value is not None:
-            return f"\033[32m{round(self.cached_value, 2)}\033[39m   (true {round(self.true, 2)})"
+            return f"\033[32m{round(self.cached_value, 2)}\033[39m   (true {round(self.true, 2)})    {[round(x, 2) for x in self._set]}"
         return str([round(x, 2) for x in self._set])
 
     def add(self, x):
         if self.cached_value is None:
-            self._set.append(x)
+            self._set.add(x)
             return
 
-        if self.check_bounding_box(x):
-            self._set.append(x)
-            self.update_cached_value()
+        self._set.add(x)
+        self.update_cached_value()
 
     def extend(self, *args):
         for x in args:
@@ -55,14 +54,19 @@ class DistanceSet:
         self.try_reduce()
 
     def update_cached_value(self):
-        self.cached_value = statistics.median(self._set)
-        self.bounding_box = (
-            self.cached_value - 2 * DISTANCE_SET_THRESHOLD, self.cached_value + 2 * DISTANCE_SET_THRESHOLD)
+        sq_sums = [sum((val - x) ** 2 for x in self._set) for val in self._set]
 
-    def check_bounding_box(self, x):
-        if self.bounding_box is None:
-            return True
-        return self.bounding_box[0] < x < self.bounding_box[1]
+        if len(self._set) > 15:
+            self.cached_value = self._set[min(range(len(self._set)), key=sq_sums.__getitem__)]
+
+        while len(self._set) > 20:
+            ind = min(range(len(self._set)), key=sq_sums.__getitem__)
+            self._set.pop(ind)
+            sq_sums.pop(ind)
+
+
+
+
 
     def try_reduce(self):
         if len(self._set) <= 2:

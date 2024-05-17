@@ -2,7 +2,7 @@ import random
 
 from network import Network
 
-random.seed(42)
+random.seed(420)
 
 n_nodes = 16
 network = Network(n_nodes, sd=0.5)
@@ -14,7 +14,7 @@ for origin_id, node in network.nodes.items():
     na += sum(1 for id, info in node.node_info.items() if info.distance.getr() == "n/a")
 print(na - n_nodes)
 
-for _ in range(50):
+for _ in range(70):
     print(f"ITERATION {_}")
     for node in network.nodes.values():
         node.try_measure_new_length()

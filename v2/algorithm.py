@@ -1,9 +1,54 @@
+import time
 from math import sqrt
-
+import numpy as np
 import sympy
 
 
-def simplex_diagonal(p0p1, p0p2, p0p3, p1p2, p2p3, p1p3, p1p4, p2p4, p3p4, verbose=False):
+def determinant_roots(d):
+    m = np.array([[0, d[0][1], d[0][2], d[0][3], 1, 1],
+                  [d[0][1], 0, d[1][2], d[1][3], d[1][4], 1],
+                  [d[0][2], d[1][2], 0, d[2][3], d[2][4], 1],
+                  [d[0][3], d[1][3], d[2][3], 0, d[3][4], 1],
+                  [1j, d[1][4], d[2][4], d[3][4], 0, 1],
+                  [1, 1, 1, 1, 1, 0]])
+
+    det = np.linalg.det(m)
+
+    m = np.delete(m, 0, 0)
+    m = np.delete(m, 4, 1)
+
+    xdet = np.linalg.det(m)
+    det -= xdet
+
+    a, b, c = xdet.imag, xdet.real + det.imag, det.real
+    d2 = b*b-4*a*c
+    if d2 < 0:
+        return []
+
+    rd = sqrt(d2)
+    roots = [(-b - rd)/(2 * a), (-b + rd)/(2 * a)]
+    return [sqrt(r) for r in roots if r > 0]
+
+
+def sympy_determinant_roots(d):
+    x = sympy.Symbol('x')
+    m = [[0, d[0][1], d[0][2], d[0][3], x, 1],
+         [d[0][1], 0, d[1][2], d[1][3], d[1][4], 1],
+         [d[0][2], d[1][2], 0, d[2][3], d[2][4], 1],
+         [d[0][3], d[1][3], d[2][3], 0, d[3][4], 1],
+         [x, d[1][4], d[2][4], d[3][4], 0, 1],
+         [1, 1, 1, 1, 1, 0]]
+
+    M = sympy.Matrix(m)
+    poly = sympy.simplify(M.det(method='berkowitz').as_poly())
+
+    roots = [float(x) for x in sympy.roots(poly).keys() if not x.as_real_imag()[1]]
+    results = [sqrt(abs(x)) for x in roots if x > 0]
+
+    return results
+
+
+def simplex_diagonal(p0p1, p0p2, p0p3, p1p2, p2p3, p1p3, p1p4, p2p4, p3p4, use_sympy=False):
     d = [
         [0, p0p1, p0p2, p0p3, 0],
         [p0p1, 0, p1p2, p1p3, p1p4],
@@ -16,23 +61,23 @@ def simplex_diagonal(p0p1, p0p2, p0p3, p1p2, p2p3, p1p3, p1p4, p2p4, p3p4, verbo
         for i in range(len(row)):
             row[i] **= 2
 
-    x = sympy.Symbol('x')
-    m = [[0, d[0][1], d[0][2], d[0][3], x, 1],
-         [d[0][1], 0, d[1][2], d[1][3], d[1][4], 1],
-         [d[0][2], d[1][2], 0, d[2][3], d[2][4], 1],
-         [d[0][3], d[1][3], d[2][3], 0, d[3][4], 1],
-         [x, d[1][4], d[2][4], d[3][4], 0, 1],
-         [1, 1, 1, 1, 1, 0]]
+    return determinant_roots(d) if not use_sympy else sympy_determinant_roots(d)
 
-    M = sympy.Matrix(m)
-    poly = sympy.simplify(M.det(method='berkowitz').as_poly())
-    if verbose:
-        print(poly)
 
-    roots = sympy.roots(poly).keys()
-    results = [sqrt(abs(x)) for x in roots if abs(x) > 0]
+if __name__ == '__main__':
+    t = time.time()
+    simplex_diagonal(1, 2, 3, 4, 1, 2, 3, 4, 1)
+    print(time.time() - t)
 
-    if verbose:
-        print(results)
+    for _ in range(100):
+        d = (np.random.rand(9) * 10) ** 2
 
-    return results
+        drs = sorted(simplex_diagonal(*d))
+        sdrs = sorted(simplex_diagonal(*d, use_sympy=True))
+
+        for r1, r2 in zip(drs, sdrs):
+            if abs(r1 - r2) > 0.0001:
+                print(drs, sdrs)
+                break
+
+
