@@ -101,8 +101,9 @@ class Node:
         self.id = id
         self.exact_xyz = exact_xyz
         self.node_info: dict[int, NodeInfo] = {}
+        self.neighbor_ids = []
 
-    def update_network_info(self, network_nodes: dict[int, Node], neighbor_info, true_info):
+    def update_network_info(self, network_nodes: dict[int, Node], neighbor_info: dict[int, float], true_info):
         self.network_nodes = network_nodes
         for id, node in network_nodes.items():
             true_distance = NetworkMeasurement.exact_d(true_info[self.id], true_info[id])
@@ -110,6 +111,8 @@ class Node:
 
         for id, dist in neighbor_info.items():
             self.node_info[id].distance.cached_value = dist
+
+        self.neighbor_ids = neighbor_info.keys()
 
     def upsert_nodeinfo(self, target_id, solutions):
         if target_id not in self.node_info.keys():
@@ -148,7 +151,9 @@ class Node:
         known_distance_ids = list(map(lambda n: n.node.id, self.get_all_nodes_known_distance()))
 
         for target_id in target_ids:
-            if target_id in known_distance_ids or target_id == self.id:
+            # if target_id in known_distance_ids or target_id == self.id:
+            #     continue
+            if target_id in self.neighbor_ids or target_id == self.id:
                 continue
 
             p1p4 = self.ask_for_distance(gate[0].node, target_id)

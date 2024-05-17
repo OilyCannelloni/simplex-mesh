@@ -14,7 +14,7 @@ for origin_id, node in network.nodes.items():
     na += sum(1 for id, info in node.node_info.items() if info.distance.getr() == "n/a")
 print(na - n_nodes)
 
-for _ in range(20):
+for _ in range(50):
     print(f"ITERATION {_}")
     for node in network.nodes.values():
         node.try_measure_new_length()
