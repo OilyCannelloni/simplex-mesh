@@ -1,0 +1,14 @@
+solution_set:
+    deriv_filter_size: 5
+    deriv_filter_sum_threshold: 0.3
+
+node:
+    max_reach: 4
+
+grid:
+    n_nodes: 20
+    size: 7
+    min_node_real_distance: 0.9
+
+measurement:
+    sd: 0.1
