@@ -6,6 +6,7 @@ from config import config
 from math import sqrt
 from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
+import queue
 
 random.seed(42)
 
@@ -53,6 +54,20 @@ class Grid:
                 if id != origin_id
                 and self.get_true_distance(origin_id, id) is not None]
 
+    def get_hop_count_from(self, origin):
+        origins = [origin]
+        targets = set()
+        visited = set()
+        hops = [[origin]]
+        while len(visited) < self.n_nodes:
+            visited.update(origins)
+            for node in origins:
+                targets.update(self.get_neighbors_of(node))
+            targets.difference_update(visited)
+            hops.append(list(targets))
+            origins = targets.copy()
+        return hops
+
     def plot(self):
         fig, ax = plt.subplots()
 
@@ -91,5 +106,7 @@ class Network:
     def get_node(self, id: int) -> Node:
         return self._nodes.get(id, None)
 
+    def get_node_count(self):
+        return config["grid"]["n_nodes"]
 
 network = Network()

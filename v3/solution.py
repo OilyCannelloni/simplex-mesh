@@ -9,7 +9,6 @@ class Solution(float):
     def get_tag(gate):
         return 2*min(gate) + 3*max(gate)
 
-
     def __new__(cls, value, badness, is_exact=False, gate=None):
         x = float.__new__(cls, value)
         x.badness = badness
@@ -28,6 +27,8 @@ class SolutionSet:
         self._solutions: list[Solution] = []
         self._cached_value: Solution | None = None
         self.is_exact: bool = False
+        self.SOLUTION_CUTOFF = config["node"]["max_reach"] * config["solution_set"]["max_reach_constant"]
+        self.MIN_LENGTH_TIMES_FILTER = config["solution_set"]["min_set_length_times_filter"]
 
     def _add(self, solution):
         if solution.is_exact:
@@ -35,7 +36,7 @@ class SolutionSet:
             self._cached_value = solution
             return
 
-        if solution < 0.6 * config["node"]["max_reach"]:
+        if solution < self.SOLUTION_CUTOFF:
             return
 
         for sol in self._solutions:
