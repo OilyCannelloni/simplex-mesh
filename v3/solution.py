@@ -22,6 +22,8 @@ class Solution(float):
 
 class SolutionSet:
     __deriv_filter_size = config["solution_set"]["deriv_filter_size"]
+    __deriv_filter_sum_thr = config["solution_set"]["deriv_filter_avg_threshold"] * __deriv_filter_size
+    __max_set_length = config["solution_set"]["max_set_length"]
 
     def __init__(self):
         self._solutions: list[Solution] = []
@@ -49,20 +51,21 @@ class SolutionSet:
         self._add(solution)
         self.update_cached_value()
 
-    def extend(self, solutions: list[Solution]):
+    def extend(self, solutions: list[Solution]) -> bool:
         for sol in solutions:
             self._add(sol)
-        self.update_cached_value()
+        return self.update_cached_value()
+
 
     def get(self):
         return self._cached_value
 
-    def update_cached_value(self):
+    def update_cached_value(self) -> bool:
         if self.is_exact:
-            return
+            return False
 
         if len(self._solutions) < 2 * self.__deriv_filter_size:
-            return
+            return False
 
         results = [sol for sol in self._solutions]
         deriv = [results[i + 1] - results[i] for i in range(len(results) - 1)]
@@ -70,12 +73,13 @@ class SolutionSet:
         deriv_sum = [sum(deriv[i-delta:i+delta]) for i in range(delta, len(deriv) - delta)]
 
         deriv_sum_minimum = min(deriv_sum)
-        if deriv_sum_minimum > config["solution_set"]["deriv_filter_sum_threshold"]:
-            return
+        must_choose = len(self._solutions) > self.__max_set_length
+        if not must_choose and deriv_sum_minimum > self.__deriv_filter_sum_thr:
+            return False
 
         deriv_sum_min_index = deriv_sum.index(deriv_sum_minimum)
         self._cached_value = self._solutions[deriv_sum_min_index + delta]
-
+        return True
 
 
 if __name__ == '__main__':

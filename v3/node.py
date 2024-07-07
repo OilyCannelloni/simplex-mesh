@@ -79,13 +79,17 @@ class Node:
     def add_solutions(self, target: TargetNode, solutions: list[Solution]):
         if target not in self._known.keys():
             self._known[target] = SolutionSet()
-        self._known[target].extend(solutions)
+        solution_ready = self._known[target].extend(solutions)
+        if solution_ready:
+            self.mark_known(target)
+        return solution_ready
 
     def mark_known(self, target: TargetNode):
         self._unknown_set.remove(target)
         self._known_set.add(target)
 
-        self.current_target_source.remove(target)
+        if target in self.current_target_source:
+            self.current_target_source.remove(target)
         if target.hops <= self.hop_level:
             self.current_hop_node_source.append(target)
 
@@ -101,6 +105,12 @@ class Node:
                         self.current_hop_node_source.append(node)
 
                 self.current_target_source.extend(self.hop_info[self.hop_level])
+
+        if pos := self.ask_node_is_anchor_and_position(target) is not None:
+            self.anchors[target] = pos
+            if len(self.anchors.keys()) == config["grid"]["n_required_anchors"]:
+                print(f"[{self._id}] Required anchors acquired")
+                self.anchor_reached = True
 
 
 
@@ -121,8 +131,8 @@ class Node:
     def get_all_completed(self) -> set[TargetNode]:
         return self._known_set
 
-    def add_solution_to_node(self, node: TargetNode, solutions: list[Solution]):
-        self.add_solutions(node, solutions)
+    def add_solution_to_node(self, node_id: int, solutions: list[Solution]):
+        self.add_solutions(self._target_set[node_id], solutions)
 
     def get_is_anchor_and_position(self):
         if self.is_anchor:
@@ -163,20 +173,12 @@ class Node:
 
         had_sol = (x := self._known.get(target)) is not None and x.get() is not None
 
-        self.add_solutions(target, solutions)
+        edge_ready = self.add_solutions(target, solutions)
         self.send_solutions_to_target(target, solutions)
 
-        has_sol = (x := self._known.get(target)) is not None and x.get() is not None
+        # has_sol = (x := self._known.get(target)) is not None and x.get() is not None
 
-        if not had_sol and has_sol:
-            self.mark_known(target)
-
-            if pos := self.ask_node_is_anchor_and_position(target) is not None:
-                self.anchors[target] = pos
-                if len(self.anchors.keys()) == config["grid"]["n_required_anchors"]:
-                    print(f"[{self._id}] Required anchors acquired")
-                    self.anchor_reached = True
-
+        if edge_ready:
             m = round(self._known[target].get(), 2)
             r = round(grid.get_true_distance(self._id, target, True), 2)
 
@@ -192,6 +194,8 @@ class Node:
 
     def try_measure_random_target(self, by_hops=False):
         if by_hops:
+            if len(self.current_target_source) == 0:
+                return
             target = random.choice(self.current_target_source)
         else:
             target = random.choice(self._unknown_set)
