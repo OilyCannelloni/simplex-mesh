@@ -53,10 +53,14 @@ class SolutionSet:
         bisect.insort_right(self._solutions, solution)
 
     def add(self, solution):
+        if len(self._solutions) > self.__max_set_length:
+            return True
         self._add(solution)
-        self.update_cached_value()
+        return self.update_cached_value()
 
     def extend(self, solutions: list[Solution]) -> bool:
+        if len(self._solutions) > self.__max_set_length:
+            return True
         for sol in solutions:
             self._add(sol)
         return self.update_cached_value()

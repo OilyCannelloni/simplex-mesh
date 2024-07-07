@@ -38,6 +38,8 @@ class Node(ABC):
         self._neighbors: set[TargetNode] = set()
         self._neighbors.update(self.broadcast_is_neighbor())
 
+        self.do_logging = False
+
 
     """
     Remotes
@@ -78,6 +80,9 @@ class Node(ABC):
     def get_is_anchor_and_position(self):
         if self.is_anchor:
             return self.position
+
+    def set_logging(self, logging: bool = True):
+        self.do_logging = logging
 
     def measure_distances_to_neighbors(self):
         for neigh in self._neighbors:
@@ -123,6 +128,8 @@ class Node(ABC):
 
 
     def log_new_edge(self, target: TargetNode):
+        if not self.do_logging:
+            return
         m = round(self._known[target].get(), 2)
         r = round(self._grid.get_true_distance(self._id, target, True), 2)
         print(f"{self._id:2} -> {target:2}" +
@@ -190,6 +197,8 @@ class RandomTargetStrategyNode(BasicStrategyNode, ABC):
         super().__init__(id, network, grid)
 
     def try_measure_new_length(self):
+        if len(self._unknown_set) == 0:
+            return
         target = random.choice(self._unknown_set)
         self._try_measure_new_length_to_target(target)
 
@@ -213,6 +222,9 @@ class RandomTargetStrategyNode(BasicStrategyNode, ABC):
 
 
 class RandomGateStrategyNode(BasicStrategyNode, ABC):
+    def __init__(self, id: int, network: Network, grid: Grid):
+        super().__init__(id, network, grid)
+
     def get_random_gate(self):
         return random.sample([id for id, solset in self._known.items() if solset.get() is not None], 2)
 
@@ -239,7 +251,7 @@ class RandomGateStrategyNode(BasicStrategyNode, ABC):
             if p1p3 is None or p2p3 is None:
                 continue
 
-            self.compute_solutions(self._target_set[target], gate, p0p1, p0p2, p1p2, p1p3, p2p3)
+            self._compute_solutions_and_mark_known(self._target_set[target], gate, p0p1, p0p2, p1p2, p1p3, p2p3)
 
 
 

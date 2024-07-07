@@ -15,10 +15,15 @@ class Simulation:
     def create(self):
         n_anchors = config["grid"]["n_anchors"]
         self.nodes = []
+
+        node_class_str = config["simulation"]["node"]
+        node_class = globals()[node_class_str]
+
         for i in range(self.N_NODES):
-            node = RandomTargetHopLevelStrategyNode(i, self.network, self.grid)
+            node = node_class(i, self.network, self.grid)
             if i < n_anchors:
                 node.set_is_anchor()
+                node.set_logging(False)
             self.nodes.append(node)
 
         for node in self.nodes:
@@ -53,7 +58,11 @@ class Simulation:
 if __name__ == '__main__':
     sim = Simulation()
     sim.create()
-    sim.run()
+    try:
+        sim.run()
+    except:
+        pass
+
     sim.show_results()
     sim.show_plots()
 

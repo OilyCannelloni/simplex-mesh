@@ -21,5 +21,4 @@ measurement:
 
 simulation:
     iterations: 2000
-    method: random-target
-    by_hops: True
+    node: RandomTargetHopLevelStrategyNode
