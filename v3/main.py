@@ -1,6 +1,6 @@
 
-from grid import grid
-from node import Node
+from grid import Grid, Network
+from node import *
 from config import config
 
 
@@ -8,33 +8,29 @@ class Simulation:
     def __init__(self):
         self.N_NODES = config["grid"]["n_nodes"]
         self.REQ_ANCHORS = config["grid"]["n_required_anchors"]
-        self.nodes = []
+        self.nodes: list[Node] = []
+        self.grid = Grid(config["grid"]["n_nodes"], config["grid"]["size"], config["measurement"]["sd"])
+        self.network = Network()
 
     def create(self):
         n_anchors = config["grid"]["n_anchors"]
-        self.nodes = [Node(is_anchor=(i < n_anchors)) for i in range(config["grid"]["n_nodes"])]
+        self.nodes = []
+        for i in range(self.N_NODES):
+            node = RandomTargetHopLevelStrategyNode(i, self.network, self.grid)
+            if i < n_anchors:
+                node.set_is_anchor()
+            self.nodes.append(node)
+
         for node in self.nodes:
             node.measure_distances_to_neighbors()
 
-    def run_random_target(self, by_hops=False):
-        for i in range(config["simulation"]["iterations"]):
-            for node in self.nodes:
-                node.try_measure_random_target(by_hops=by_hops)
-            if i % 1000 == 0:
-                print(f"------ ITERATION {i} ------")
-
-    def run_random_gate(self, by_hops=False):
-        for i in range(config["simulation"]["iterations"]):
-            for node in self.nodes:
-                node.try_measure_random_gate(by_hops=by_hops)
-            if i % 100 == 0:
-                print(f"------ ITERATION {i} ------")
 
     def run(self):
-        if config["simulation"]["method"] == "random-gate":
-            self.run_random_gate(by_hops=config["simulation"]["by_hops"])
-        elif config["simulation"]["method"] == "random-target":
-            self.run_random_target(by_hops=config["simulation"]["by_hops"])
+        for i in range(config["simulation"]["iterations"]):
+            for node in self.nodes:
+                node.try_measure_new_length()
+            if i % 100 == 0:
+                print(f"------ ITERATION {i} ------")
 
 
     def show_results(self):
@@ -49,10 +45,10 @@ class Simulation:
         n_anchored = len([x for x in self.nodes if x.is_anchor or len(x.anchors.keys()) >= self.REQ_ANCHORS])
         print(f"Nodes anchored: {n_anchored} / {self.N_NODES}")
 
-        print(f"Anchors: {[f'{n._id}:{n.anchors.keys()}   ' for n in self.nodes]}")
+        print(f"Anchors: {'    '.join([f'{n._id}:{list(n.anchors.keys())}' for n in self.nodes])}")
 
     def show_plots(self):
-        grid.plot()
+        self.grid.plot(self.network)
 
 if __name__ == '__main__':
     sim = Simulation()

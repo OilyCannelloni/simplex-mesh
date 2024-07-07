@@ -28,7 +28,6 @@ class Network:
     def nodes(self):
         return self._nodes.values()
 
-network = Network()
 
 
 class Grid:
@@ -58,6 +57,9 @@ class Grid:
     def _d(self, p1, p2):
         return sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
 
+    def get_true_position(self, node_id: int):
+        return self.real_node_coords[node_id]
+
     def get_true_distance(self, origin_id: int, target_id: int, override_range=False):
         p1, p2 = self.real_node_coords[origin_id], self.real_node_coords[target_id]
         distance = self._d(p1, p2)
@@ -75,7 +77,7 @@ class Grid:
                 if id != origin_id
                 and self.get_true_distance(origin_id, id) is not None]
 
-    def get_hop_count_from(self, origin):
+    def get_hop_counts_from(self, origin):
         origins = [origin]
         targets = set()
         visited = set()
@@ -89,7 +91,7 @@ class Grid:
             origins = targets.copy()
         return hops
 
-    def plot(self):
+    def plot(self, network: Network):
         fig, ax = plt.subplots()
         fig.set_size_inches(10, 10)
 
@@ -117,6 +119,6 @@ class Grid:
         plt.show()
 
 
-grid = Grid(config["grid"]["n_nodes"], config["grid"]["size"], config["measurement"]["sd"])
+
 
 
