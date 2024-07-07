@@ -22,8 +22,8 @@ class Node:
 
         self.hop_info = self.broadcast_get_hop_count()
         self.hop_level = 2
-        self.hop_level_low = 2
-        self.current_hop_node_source = self.hop_info[1]
+        self.current_hop_node_source = self.hop_info[1].copy()
+        self.current_target_source = self.hop_info[2].copy()
         self.known_count_by_hop_level = [0] * len(self.hop_info)
 
         self._known: dict[TargetNode, SolutionSet] = {}
@@ -45,6 +45,7 @@ class Node:
 
 
         self.is_anchor = is_anchor
+        self.anchor_reached = is_anchor
         self.anchors = {}
         self.position = None if not self.is_anchor else grid.real_node_coords[self._id]
 
@@ -57,7 +58,8 @@ class Node:
 
             for n_hops, hop_subset in enumerate(self.hop_info):
                 if x in hop_subset:
-                    ret.append(TargetNode(x, n_hops))
+                    tn = TargetNode(x, n_hops)
+                    ret.append(tn)
                     break
         return ret
 
@@ -83,6 +85,7 @@ class Node:
         self._unknown_set.remove(target)
         self._known_set.add(target)
 
+        self.current_target_source.remove(target)
         if target.hops <= self.hop_level:
             self.current_hop_node_source.append(target)
 
@@ -97,14 +100,7 @@ class Node:
                     if node.completed and node.hops <= self.hop_level and node not in self.current_hop_node_source:
                         self.current_hop_node_source.append(node)
 
-            # low_completion_frac = self.known_count_by_hop_level[self.hop_level_low] / len(self.hop_info[self.hop_level_low])
-            # if low_completion_frac > config["node"]["hop_level_clear_threshold"]:
-            #     print(self.hop_info[self.hop_level_low])
-            #     print(self.current_hop_node_source)
-            #
-            #
-            #     self.hop_level_low += 1
-            #     print(f"{[self._id]} Low Hop level -> {self.hop_level_low}")
+                self.current_target_source.extend(self.hop_info[self.hop_level])
 
 
 
@@ -179,6 +175,7 @@ class Node:
                 self.anchors[target] = pos
                 if len(self.anchors.keys()) == config["grid"]["n_required_anchors"]:
                     print(f"[{self._id}] Required anchors acquired")
+                    self.anchor_reached = True
 
             m = round(self._known[target].get(), 2)
             r = round(grid.get_true_distance(self._id, target, True), 2)
@@ -193,8 +190,12 @@ class Node:
                 print(self._known[target]._solutions)
 
 
-    def try_measure_random_target(self):
-        target = random.choice(self._unknown_set)
+    def try_measure_random_target(self, by_hops=False):
+        if by_hops:
+            target = random.choice(self.current_target_source)
+        else:
+            target = random.choice(self._unknown_set)
+
         target_neighs = self.ask_node_for_all_completed_ids(target)
         gate_pool = target_neighs.intersection(self._known_set)
         if len(gate_pool) < 2:
@@ -209,7 +210,7 @@ class Node:
 
         p1p3 = self.ask_node_for_distance(target, gate[0])
         p2p3 = self.ask_node_for_distance(target, gate[1])
-        self.compute_solution(target, gate, p0p1, p0p2, p1p2, p1p3, p2p3)
+        self.compute_solution(self._target_set[target], gate, p0p1, p0p2, p1p2, p1p3, p2p3)
 
 
     def try_measure_random_gate(self, by_hops=False):

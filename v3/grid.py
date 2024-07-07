@@ -10,6 +10,27 @@ import queue
 
 random.seed(42)
 
+class Network:
+    _nodes: dict = {}
+
+    def __init__(self):
+        pass
+
+    def add_node(self, node):
+        self._nodes[node._id] = node
+
+    def get_node(self, id: int):
+        return self._nodes.get(id, None)
+
+    def get_node_count(self):
+        return config["grid"]["n_nodes"]
+
+    def nodes(self):
+        return self._nodes.values()
+
+network = Network()
+
+
 class Grid:
     NODE_REACH = config["node"]["max_reach"]
 
@@ -73,10 +94,8 @@ class Grid:
 
         xs = [tpl[0] for tpl in self.real_node_coords]
         ys = [tpl[1] for tpl in self.real_node_coords]
-        ax.scatter(x=xs, y=ys)
 
-        for id in range(len(self.real_node_coords)):
-            plt.annotate(str(id), (xs[id]+.06, ys[id]+.06))
+
 
         lines = []
         for p1, p2 in itertools.product(range(self.n_nodes), repeat=2):
@@ -86,27 +105,17 @@ class Grid:
                 continue
             lines.append([(self.real_node_coords[p1]), self.real_node_coords[p2]])
 
-        lc = LineCollection(lines)
+        lc = LineCollection(lines, zorder=1)
         ax.add_collection(lc)
+
+        ax.scatter(x=xs, y=ys, c=["y" if n.is_anchor else "g" if n.anchor_reached else "r" for n in network.nodes()],
+                   zorder=2)
+        for id in range(len(self.real_node_coords)):
+            plt.annotate(str(id), (xs[id]+.06, ys[id]+.06), zorder=3)
+
         plt.show()
 
 
 grid = Grid(config["grid"]["n_nodes"], config["grid"]["size"], config["measurement"]["sd"])
 
 
-class Network:
-    _nodes: dict[int, Node] = {}
-
-    def __init__(self):
-        pass
-
-    def add_node(self, node):
-        self._nodes[node._id] = node
-
-    def get_node(self, id: int) -> Node:
-        return self._nodes.get(id, None)
-
-    def get_node_count(self):
-        return config["grid"]["n_nodes"]
-
-network = Network()

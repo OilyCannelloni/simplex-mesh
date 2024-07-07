@@ -1,24 +1,24 @@
 solution_set:
     deriv_filter_size: 3
-    deriv_filter_sum_threshold: 0.3
+    deriv_filter_sum_threshold: 0.5
     max_reach_constant: 0.7
     min_set_length_times_filter: 2
 
 node:
     max_reach: 4
-    hop_level_advance_threshold: 0.5
-    hop_level_clear_threshold: 0.9
+    hop_level_advance_threshold: 0.4
 
 grid:
     n_nodes: 70
     size: 15
     min_node_real_distance: 1.2
     n_anchors: 6
-    n_required_anchors: 4
+    n_required_anchors: 3
 
 measurement:
     sd: 0
 
 simulation:
-    iterations: 600
-    method: random-gate-by-hops
+    iterations: 3000
+    method: random-target
+    by_hops: True

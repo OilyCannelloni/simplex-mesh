@@ -14,10 +14,10 @@ class Simulation:
         n_anchors = config["grid"]["n_anchors"]
         self.nodes = [Node(is_anchor=(i < n_anchors)) for i in range(config["grid"]["n_nodes"])]
 
-    def run_random_target(self):
+    def run_random_target(self, by_hops=False):
         for i in range(config["simulation"]["iterations"]):
             for node in self.nodes:
-                node.try_measure_random_target()
+                node.try_measure_random_target(by_hops=by_hops)
             if i % 1000 == 0:
                 print(f"------ ITERATION {i} ------")
 
@@ -30,11 +30,9 @@ class Simulation:
 
     def run(self):
         if config["simulation"]["method"] == "random-gate":
-            self.run_random_gate()
+            self.run_random_gate(by_hops=config["simulation"]["by_hops"])
         elif config["simulation"]["method"] == "random-target":
-            self.run_random_target()
-        elif config["simulation"]["method"] == "random-gate-by-hops":
-            self.run_random_gate(by_hops=True)
+            self.run_random_target(by_hops=config["simulation"]["by_hops"])
 
 
     def show_results(self):
