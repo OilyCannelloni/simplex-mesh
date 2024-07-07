@@ -39,9 +39,19 @@ class Simulation:
 
 
     def show_results(self):
+        print("Distances")
         for node in self.nodes:
             print(f"{node._id} |   " + "  ".join(
                 f"{f'{target}: {x.get() if (x := node._known.get(target)) is not None else None}':10}"
+                if target != node._id
+                else " " * 10
+                for target in range(config["grid"]["n_nodes"])
+            ))
+
+        print("Errors")
+        for node in self.nodes:
+            print(f"{node._id} |   " + "  ".join(
+                f"{f'{target}: {round(x.get() - self.grid.get_true_distance(node._id, target, override_range=True), 1) if (x := node._known.get(target)) is not None else None}':10}"
                 if target != node._id
                 else " " * 10
                 for target in range(config["grid"]["n_nodes"])
