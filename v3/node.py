@@ -34,20 +34,18 @@ class Node:
         self._neighbors: set[TargetNode] = set()
         self._neighbors.update(self.broadcast_is_neighbor())
 
-
-        for neigh in self._neighbors:
-            d = self.measure_distance(neigh)
-            if d is not None:
-                neigh.completed = True
-                self.add_solution_to_node(neigh, [Solution(d, badness=0, is_exact=True)])
-                self._unknown_set.remove(neigh)
-                self._known_set.add(neigh)
-
-
         self.is_anchor = is_anchor
         self.anchor_reached = is_anchor
         self.anchors = {}
         self.position = None if not self.is_anchor else grid.real_node_coords[self._id]
+
+
+    def measure_distances_to_neighbors(self):
+        for neigh in self._neighbors:
+            d = self.measure_distance(neigh)
+            if d is not None:
+                neigh.completed = True
+                self.add_exact_solution(neigh, d)
 
 
     def create_unknown_set(self, with_self=False) -> list[TargetNode]:
@@ -84,10 +82,14 @@ class Node:
             self.mark_known(target)
         return solution_ready
 
-    def mark_known(self, target: TargetNode):
-        self._unknown_set.remove(target)
-        self._known_set.add(target)
+    def add_exact_solution(self, target: TargetNode, value: float):
+        if target not in self._known.keys():
+            self._known[target] = SolutionSet(exact_value=value)
+        else:
+            self._known[target].add(Solution(value=value, is_exact=True, badness=0))
+        self.mark_known(target, process_hop_level=False)
 
+    def process_hop_level(self, target: TargetNode):
         if target in self.current_target_source:
             self.current_target_source.remove(target)
         if target.hops <= self.hop_level:
@@ -106,11 +108,28 @@ class Node:
 
                 self.current_target_source.extend(self.hop_info[self.hop_level])
 
+    def check_anchor_hit(self, target: TargetNode):
         if pos := self.ask_node_is_anchor_and_position(target) is not None:
             self.anchors[target] = pos
             if len(self.anchors.keys()) == config["grid"]["n_required_anchors"]:
                 print(f"[{self._id}] Required anchors acquired")
                 self.anchor_reached = True
+
+
+    def mark_known(self, target: TargetNode, process_hop_level=True, check_anchor_hit=True):
+        if target not in self._unknown_set:  # TODO check why this happens as it should not.
+            return
+        self._unknown_set.remove(target)
+        self._known_set.add(target)
+
+        if process_hop_level:
+            self.process_hop_level(target)
+
+        if check_anchor_hit:
+            self.check_anchor_hit(target)
+
+
+
 
 
 
@@ -171,12 +190,8 @@ class Node:
         solutions = [Solution(x, badness=max(edge.badness for edge in (p0p1, p0p2, p1p2, p1p3, p2p3)), gate=gate)
                      for x in algorithm.simplex_diagonal(p0p1, p0p2, p1p2, p1p3, p2p3)]
 
-        had_sol = (x := self._known.get(target)) is not None and x.get() is not None
-
         edge_ready = self.add_solutions(target, solutions)
         self.send_solutions_to_target(target, solutions)
-
-        # has_sol = (x := self._known.get(target)) is not None and x.get() is not None
 
         if edge_ready:
             m = round(self._known[target].get(), 2)

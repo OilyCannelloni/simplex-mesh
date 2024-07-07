@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
 import queue
 
-random.seed(42)
+random.seed(43)
 
 class Network:
     _nodes: dict = {}
@@ -91,6 +91,7 @@ class Grid:
 
     def plot(self):
         fig, ax = plt.subplots()
+        fig.set_size_inches(10, 10)
 
         xs = [tpl[0] for tpl in self.real_node_coords]
         ys = [tpl[1] for tpl in self.real_node_coords]

@@ -17,7 +17,7 @@ grid:
     n_required_anchors: 5
 
 measurement:
-    sd: 0
+    sd: 0.1
 
 simulation:
     iterations: 2000

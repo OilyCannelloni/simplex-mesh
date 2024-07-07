@@ -25,12 +25,17 @@ class SolutionSet:
     __deriv_filter_sum_thr = config["solution_set"]["deriv_filter_avg_threshold"] * __deriv_filter_size
     __max_set_length = config["solution_set"]["max_set_length"]
 
-    def __init__(self):
+    def __init__(self, exact_value=None):
         self._solutions: list[Solution] = []
         self._cached_value: Solution | None = None
-        self.is_exact: bool = False
         self.SOLUTION_CUTOFF = config["node"]["max_reach"] * config["solution_set"]["max_reach_constant"]
         self.MIN_LENGTH_TIMES_FILTER = config["solution_set"]["min_set_length_times_filter"]
+        self.is_exact = False
+
+        if exact_value is not None:
+            self.is_exact = True
+            self._cached_value = Solution(exact_value, is_exact=True, badness=0)
+
 
     def _add(self, solution):
         if solution.is_exact:

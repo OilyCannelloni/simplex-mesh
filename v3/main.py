@@ -13,6 +13,8 @@ class Simulation:
     def create(self):
         n_anchors = config["grid"]["n_anchors"]
         self.nodes = [Node(is_anchor=(i < n_anchors)) for i in range(config["grid"]["n_nodes"])]
+        for node in self.nodes:
+            node.measure_distances_to_neighbors()
 
     def run_random_target(self, by_hops=False):
         for i in range(config["simulation"]["iterations"]):
@@ -46,6 +48,8 @@ class Simulation:
 
         n_anchored = len([x for x in self.nodes if x.is_anchor or len(x.anchors.keys()) >= self.REQ_ANCHORS])
         print(f"Nodes anchored: {n_anchored} / {self.N_NODES}")
+
+        print(f"Anchors: {[f'{n._id}:{n.anchors.keys()}   ' for n in self.nodes]}")
 
     def show_plots(self):
         grid.plot()
