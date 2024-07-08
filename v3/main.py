@@ -1,5 +1,5 @@
 
-from grid import Grid, Network
+from grid import Grid, Network, Point2D
 from node import *
 from config import config
 
@@ -9,7 +9,7 @@ class Simulation:
         self.N_NODES = config["grid"]["n_nodes"]
         self.REQ_ANCHORS = config["grid"]["n_required_anchors"]
         self.nodes: list[Node] = []
-        self.grid = Grid(config["grid"]["n_nodes"], config["grid"]["size"], config["measurement"]["sd"])
+        self.grid = Grid(Point2D, config["grid"]["n_nodes"], config["grid"]["size"], config["measurement"]["sd"])
         self.network = Network()
 
     def create(self):
