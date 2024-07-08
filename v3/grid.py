@@ -6,38 +6,58 @@ import itertools
 import math
 import random
 from config import config
-from math import sqrt
 from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
 from abc import ABC
-from typing import Generic, TypeVar, Type
+from typing import Generic, TypeVar, Type, Collection, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from node import Node
+
+
+"""
+To preserve the same network in testing phase
+"""
 random.seed(43)
 
+
+"""Abstract class for a N-dimensional point in an Euclidean Space."""
 class Point(ABC):
+    """Dimension of the point, eg. 3 for XYZ"""
     dim = 0
 
     @property
     @abc.abstractmethod
     def xyz(self):
+        """A tuple-like structure that contains the coordinates."""
         pass
 
     @staticmethod
     def d2(origin: Point, target: Point):
+        """Returns the squared distance between two points"""
         return origin.d2_to(target)
 
     @staticmethod
     def distance(origin: Point, target: Point):
+        """Returns the distance between two points"""
         return math.sqrt(origin.d2_to(target))
 
     def d2_to(self, other: Point):
+        """Returns the square of the distance to another point"""
         return sum((a-b)*(a-b) for a, b in zip(self.xyz, other.xyz))
 
     def distance_to(self, other: Point):
+        """Returns the distance to another point"""
         return math.sqrt(self.d2_to(other))
 
     @classmethod
     def random(cls, lower_bound=0, upper_bound=1) -> Point:
+        """
+        Creates a new object of a subclass of Point, which has random coordinates in the given range
+        :param lower_bound: minimal value of coordinates
+        :param upper_bound: maximal value of coordinates
+        :return: a Point with random coordinates
+        """
         assert upper_bound > lower_bound
         diff = upper_bound - lower_bound
         coords = tuple(random.random() * diff + lower_bound for _ in range(cls.dim))
@@ -69,39 +89,59 @@ class Point3D(Point, ABC):
 
 
 class Network:
+    """
+    Takes care of communication between nodes.
+    Any node can get access to another by its ID (address)
+    """
     _nodes: dict = {}
 
     def __init__(self):
         pass
 
-    def add_node(self, node):
+    def add_node(self, node) -> None:
         self._nodes[node._id] = node
 
-    def get_node(self, id: int):
+    def get_node(self, id: int) -> Node | None:
         return self._nodes.get(id, None)
 
-    def get_node_count(self):
+    def get_node_count(self) -> int:
         return config["grid"]["n_nodes"]
 
-    def nodes(self):
+    def nodes(self) -> Collection[Node]:
         return self._nodes.values()
 
 
 P = TypeVar("P", bound=Point)
 
 class Grid(Generic[P]):
+    """
+    Manages the physical placement of the network nodes.
+    Works in either 2D or 3D, a point_type parameter needs to be provided.
+    """
+
+    """Maximum distance below which nodes can communicate with each other"""
     NODE_REACH = config["node"]["max_reach"]
-    real_node_coords: list[P]
 
     def __init__(self, point_type: Type[P], n_nodes: int, grid_size: int, sd: float = 0.2):
+        """
+        :param point_type: Point2D or Point3D
+        :param n_nodes: Number of nodes in the network
+        :param grid_size: Size of a single dimension in units. It is assumed the grid is a square or a cube
+        :param sd: Standard deviation for the normal distribution used to provide simulated measurement results.
+        The distribution is always centered on the real value.
+        """
         self.P = point_type
         self.n_nodes = n_nodes
         self.grid_size = grid_size
         self.sd = sd
-        self.real_node_coords = []
+        self.real_node_coords: list[P] = []
         self.setup()
 
     def setup(self):
+        """
+        Creates the points on the grid, such that no two lie closer together than a constant given in configuration.
+        :return: None
+        """
         for i in range(self.n_nodes):
             while True:
                 point = self.P.random(upper_bound=self.grid_size)
@@ -113,9 +153,22 @@ class Grid(Generic[P]):
                     break
 
     def get_true_position(self, node_id: int):
+        """
+        Returns the real position of a node with given ID / Address
+        :param node_id: ID of node
+        :return: Point object describing the position
+        """
         return self.real_node_coords[node_id]
 
     def get_true_distance(self, origin_id: int, target_id: int, override_range=False):
+        """
+        Returns the real distance between two points with given IDs.
+        If the distance is larger than maximal node reach, returns None
+        :param origin_id: ID of first node
+        :param target_id: ID of second node
+        :param override_range: Return the true distance even if it's larger than maximal range of node.
+        :return: True distance between the nodes
+        """
         p1, p2 = self.real_node_coords[origin_id], self.real_node_coords[target_id]
         distance = p1.distance_to(p2)
         if not override_range and distance > Grid.NODE_REACH:
@@ -123,16 +176,36 @@ class Grid(Generic[P]):
         return distance
 
     def get_measured_distance(self, origin_id: int, target_id: int) -> float:
+        """
+        Returns a distorted distance between two nodes to simulate a real environment.
+        Distortion is given by the normal distribution with SD that can be set up as a parameter of the Grid class.
+        :param origin_id: ID of first node
+        :param target_id: ID of second node
+        :return: A value close to the true distance between the nodes.
+        """
         if self.sd > 0:
             return random.normalvariate(self.get_true_distance(origin_id, target_id), self.sd)
         return self.get_true_distance(origin_id, target_id)
 
-    def get_neighbors_of(self, origin_id: int):
+    def get_neighbors_of(self, origin_id: int) -> list[int]:
+        """
+        Returns a list of IDs of nodes in range of the origin node
+        :param origin_id: ID of origin node
+        :return: A list of IDs of neighboring nodes
+        """
         return [id for id in range(len(self.real_node_coords))
                 if id != origin_id
                 and self.get_true_distance(origin_id, id) is not None]
 
     def get_hop_counts_from(self, origin):
+        """
+        Traverses the network using the BFS algorithm in order to find minimal hop counts
+        to get from origin to all nodes in the network.
+        :param origin:
+        :return: A list of lists with structure
+            number_of_hops: [node_1, node_2, ...]
+            where n_hops is between 0 (origin) and a maximum number of hops to reach any node.
+        """
         origins = [origin]
         targets = set()
         visited = set()
@@ -147,6 +220,11 @@ class Grid(Generic[P]):
         return hops
 
     def plot(self, network: Network):
+        """
+        Plots the network and connections.
+        :param network: Network describing the nodes
+        :return: None
+        """
         fig, ax = plt.subplots()
         fig.set_size_inches(10, 10)
 

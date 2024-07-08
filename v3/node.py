@@ -1,14 +1,22 @@
 import abc
 import random
 from abc import ABC
-from typing import Collection
 from solution import *
 from grid import Grid, Network
 import algorithm
 
 
 class TargetNode(int):
-    def __new__(cls, id: int, hops: int = 0, completed: bool = False, do_logging: bool = True) -> "TargetNode":
+    """
+    Class describing information about a node from the perspective of an origin node.
+    """
+    def __new__(cls, id: int, hops: int = 0, completed: bool = False) -> "TargetNode":
+        """
+        :param id: ID of the node
+        :param hops: Hops required to get to the node
+        :param completed: Whether the distance to the node is known
+        :param do_logging:
+        """
         x = int.__new__(cls, id)
         x.hops = hops
         x.completed = False
