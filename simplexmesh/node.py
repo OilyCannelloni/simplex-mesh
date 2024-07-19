@@ -1,9 +1,9 @@
-import abc
 import random
+import abc
 from abc import ABC
-from solution import *
-from grid import Grid, Network
-import algorithm
+from simplexmesh.solution import *
+from simplexmesh.grid import Grid, Network
+from simplexmesh.algorithm import simplex_diagonal
 
 
 class TargetNode(int):
@@ -88,6 +88,7 @@ class Node(ABC):
     def get_is_anchor_and_position(self):
         if self.is_anchor:
             return self.position
+        return None
 
     def set_logging(self, logging: bool = True):
         self.do_logging = logging
@@ -116,7 +117,7 @@ class Node(ABC):
         self.check_anchor_hit(target)
 
     def check_anchor_hit(self, target: TargetNode):
-        if pos := self.ask_node_is_anchor_and_position(target) is not None:
+        if (pos := self.ask_node_is_anchor_and_position(target)) is not None:
             self.anchors[target] = pos
             if len(self.anchors.keys()) == self.__anchors_required:
                 print(f"[{self._id}] Required anchors acquired")
@@ -130,7 +131,7 @@ class Node(ABC):
                          p0p2: Solution, p1p2: Solution, p1p3: Solution, p2p3: Solution):
 
         solutions = [Solution(x, badness=max(edge.badness for edge in (p0p1, p0p2, p1p2, p1p3, p2p3)), gate=gate)
-                     for x in algorithm.simplex_diagonal(p0p1, p0p2, p1p2, p1p3, p2p3)]
+                     for x in simplex_diagonal(p0p1, p0p2, p1p2, p1p3, p2p3)]
 
         return solutions
 

@@ -5,7 +5,7 @@ import dataclasses
 import itertools
 import math
 import random
-from config import config
+from simplexmesh.config import config
 from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
 from abc import ABC
@@ -73,7 +73,7 @@ class Point(ABC):
 @dataclasses.dataclass
 class Point2D(Point, ABC):
     dim = 2
-    xyz: tuple[int, int] = (0, 0)
+    xyz: tuple[float, ...] = (0, 0)
 
     def __repr__(self):
         return super().__repr__()
@@ -82,7 +82,7 @@ class Point2D(Point, ABC):
 @dataclasses.dataclass
 class Point3D(Point, ABC):
     dim = 3
-    xyz: tuple[int, int, int] = (0, 0, 0)
+    xyz: tuple[float, ...] = (0, 0, 0)
 
     def __repr__(self):
         return super().__repr__()
@@ -225,8 +225,8 @@ class Grid(Generic[P]):
         :param network: Network describing the nodes
         :return: None
         """
-        fig, ax = plt.subplots()
-        fig.set_size_inches(10, 10)
+        fig, (ax, ax2) = plt.subplots(1, 2)
+        fig.set_size_inches(20, 10)
 
         xs = [point[0] for point in self.real_node_coords]
         ys = [point[1] for point in self.real_node_coords]
@@ -245,7 +245,19 @@ class Grid(Generic[P]):
         ax.scatter(x=xs, y=ys, c=["y" if n.is_anchor else "g" if n.anchor_reached else "r" for n in network.nodes()],
                    zorder=2)
         for id in range(len(self.real_node_coords)):
-            plt.annotate(str(id), (xs[id]+.06, ys[id]+.06), zorder=3)
+            ax.annotate(str(id), (xs[id]+.06, ys[id]+.06), zorder=3)
+
+        calc_xs = [node.position[0] for node in network.nodes()]
+        calc_ys = [node.position[1] for node in network.nodes()]
+        lines2 = [[node.position.xyz, self.real_node_coords[node._id].xyz] for node in network.nodes()]
+
+        lc2 = LineCollection(lines2, zorder=1)
+        ax2.set_xlim(0, self.grid_size)
+        ax2.set_ylim(0, self.grid_size)
+        ax2.add_collection(lc2)
+        ax2.scatter(calc_xs, calc_ys, c="r", zorder=2)
+        for id in range(len(self.real_node_coords)):
+            ax2.annotate(str(id), (calc_xs[id]+.06, calc_ys[id]+.06), zorder=3)
 
         plt.show()
 

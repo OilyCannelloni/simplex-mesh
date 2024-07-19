@@ -1,6 +1,6 @@
 from __future__ import annotations
 import bisect
-from config import config
+from simplexmesh.config import config
 
 
 class Solution(float):
@@ -12,7 +12,7 @@ class Solution(float):
     def get_tag(gate: tuple[int]):
         return 2*min(gate) + 3*max(gate)
 
-    def __new__(cls, value, badness, is_exact=False, gate=None):
+    def __new__(cls, value, badness=-1, is_exact=False, gate=None):
         """
         Creates a new solution.
         :param value: Float value of the calculated distance

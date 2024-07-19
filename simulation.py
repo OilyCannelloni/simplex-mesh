@@ -1,7 +1,7 @@
-
-from grid import Grid, Network, Point2D
-from node import *
-from config import config
+from simplexmesh.grid import Grid, Network, Point2D
+from simplexmesh.node import *
+from simplexmesh.config import config
+from simplexmesh.algorithm import get_position_by_anchors_2d_lls
 
 
 class Simulation:
@@ -62,6 +62,23 @@ class Simulation:
 
         print(f"Anchors: {'    '.join([f'{n._id}:{list(n.anchors.keys())}' for n in self.nodes])}")
 
+        print("\n\n")
+        print("Positions:")
+        for node in self.nodes:
+            anchor_ids = random.sample(list(node.anchors.keys()), config["simulation"]["n_used_anchors"])
+            anchors = [node.anchors[id] for id in anchor_ids]
+            distances = [node._known[id].get() for id in anchor_ids]
+            if None in distances:
+                continue
+            position = get_position_by_anchors_2d_lls(anchors, distances)
+            true_pos = self.grid.get_true_position(node._id)
+            print(f"{node._id} | Calculated: {position}  | Real: {true_pos}  | Delta: {position.distance_to(true_pos)}")
+            if not node.is_anchor:
+                node.position = position
+
+
+
+
     def show_plots(self):
         self.grid.plot(self.network)
 
@@ -70,7 +87,8 @@ if __name__ == '__main__':
     sim.create()
     try:
         sim.run()
-    except:
+    except Exception as ex:
+        raise ex
         pass
 
     sim.show_results()
