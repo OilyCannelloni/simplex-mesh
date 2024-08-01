@@ -219,6 +219,7 @@ class Grid(Generic[P]):
             origins = targets.copy()
         return hops
 
+
     def plot(self, network: Network):
         """
         Plots the network and connections.
@@ -231,8 +232,23 @@ class Grid(Generic[P]):
         xs = [point[0] for point in self.real_node_coords]
         ys = [point[1] for point in self.real_node_coords]
 
+        # lines = []
+        # for p1, p2 in itertools.product(range(self.n_nodes), repeat=2):
+        #     if p1 == p2:
+        #         continue
+        #     if self.get_true_distance(p1, p2) is None:
+        #         continue
+        #     lines.append([self.real_node_coords[p1].xyz, self.real_node_coords[p2].xyz])
+
         lines = []
-        for p1, p2 in itertools.product(range(self.n_nodes), repeat=2):
+        for p1, p2 in [(11, 66), (66, 24), (24, 4),
+                       (11, 52), (52, 77), (77, 23), (23, 40),
+                       (11, 6), (6, 29),
+                       (11, 74), (74, 13), (13, 26),
+                       (11, 74), (74, 32), (32, 54),
+                       (11, 28), (28, 60), (60, 70),
+                       (11, 10), (10, 21),
+                       (11, 10), (10, 35), (35, 69)]:
             if p1 == p2:
                 continue
             if self.get_true_distance(p1, p2) is None:

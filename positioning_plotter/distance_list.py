@@ -4,9 +4,9 @@ class DistanceList:
         self.measurements = []
         self.filtered = []
         self.result: float | None = None
-        self.median_filter_size = 3
-        self.required_measurements = 3
-        self.max_measurements = 10
+        self.median_filter_size = 5
+        self.required_measurements = 10
+        self.max_measurements = 30
         self.cache_valid = False
         self.cached_value = 0
 
@@ -28,6 +28,16 @@ class DistanceList:
                 return seq[len(seq) // 2]
             return (seq[len(seq) // 2 - 1] + seq[len(seq) // 2]) / 2
 
+        def quantile(seq, q):
+            assert 0 <= q <= 1
+            index = int(len(seq) * q)
+            return seq[index]
+
+        def iqr_mean(seq):
+            lo = int(len(seq) * 0.15)
+            hi = int(len(seq) * 0.45)
+            return sum(seq[lo:hi]) / (hi - lo)
+
         half_size = self.median_filter_size // 2
         if half_size % 2 == 0:
             half_size += 1
@@ -35,5 +45,6 @@ class DistanceList:
                          for i in range(half_size, len(self.measurements) - half_size)]
 
         self.cached_value = sum(self.filtered) / len(self.filtered)
+        # self.cached_value = iqr_mean(self.filtered)
         self.cache_valid = True
         return self.cached_value

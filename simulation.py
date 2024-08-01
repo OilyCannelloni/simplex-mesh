@@ -21,7 +21,7 @@ class Simulation:
 
         for i in range(self.N_NODES):
             node = node_class(i, self.network, self.grid)
-            if i < n_anchors:
+            if i in [70, 29, 69, 26, 54, 40, 4, 21]:
                 node.set_is_anchor()
                 node.set_logging(False)
             self.nodes.append(node)
@@ -65,7 +65,11 @@ class Simulation:
         print("\n\n")
         print("Positions:")
         for node in self.nodes:
-            anchor_ids = random.sample(list(node.anchors.keys()), config["simulation"]["n_used_anchors"])
+            if config["simulation"]["n_used_anchors"] != config["grid"]["n_required_anchors"]:
+                anchor_ids = random.sample(list(node.anchors.keys()), config["simulation"]["n_used_anchors"])
+            else:
+                anchor_ids = node.anchors.keys()
+
             anchors = [node.anchors[id] for id in anchor_ids]
             distances = [node._known[id].get() for id in anchor_ids]
             if None in distances:

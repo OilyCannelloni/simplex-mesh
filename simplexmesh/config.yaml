@@ -13,8 +13,8 @@ grid:
     n_nodes: 80
     size: 15
     min_node_real_distance: 1.2
-    n_anchors: 6
-    n_required_anchors: 6
+    n_anchors: 8
+    n_required_anchors: 8
 
 
 measurement:
@@ -23,4 +23,4 @@ measurement:
 simulation:
     iterations: 2000
     node: RandomTargetHopLevelStrategyNode
-    n_used_anchors: 3
+    n_used_anchors: 8
