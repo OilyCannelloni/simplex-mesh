@@ -19,9 +19,11 @@ class Simulation:
         node_class_str = config["simulation"]["node"]
         node_class = globals()[node_class_str]
 
+        self.grid.setup()
+
         for i in range(self.N_NODES):
             node = node_class(i, self.network, self.grid)
-            if i in [70, 29, 69, 26, 54, 40, 4, 21]:
+            if i < n_anchors:
                 node.set_is_anchor()
                 node.set_logging(False)
             self.nodes.append(node)

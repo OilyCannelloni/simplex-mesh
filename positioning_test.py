@@ -5,10 +5,7 @@ import time
 
 import matplotlib.pyplot as plt
 
-from simplexmesh.algorithm import get_position_by_anchors_2d_lls
 from simplexmesh.grid import Point2D
-from positioning_plotter.distance_list import DistanceList
-from positioning_plotter.plotter import Plotter
 import serial
 import re
 

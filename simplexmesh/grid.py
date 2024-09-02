@@ -113,6 +113,7 @@ class Network:
 
 P = TypeVar("P", bound=Point)
 
+
 class Grid(Generic[P]):
     """
     Manages the physical placement of the network nodes.
@@ -135,22 +136,41 @@ class Grid(Generic[P]):
         self.grid_size = grid_size
         self.sd = sd
         self.real_node_coords: list[P] = []
-        self.setup()
+        self._placement_conditions = [self._condition_nodes_away_from_each_other]
+
+    def _condition_nodes_away_from_each_other(self, point: P) -> bool:
+        for target in self.real_node_coords:
+            if point.distance_to(target) < config["grid"]["min_node_real_distance"]:
+                return False
+        return True
+
+    def get_random_node_placement(self) -> P | None:
+        counter = 100
+        while counter > 0:
+            point = self.P.random(upper_bound=self.grid_size)
+            counter -= 1
+            for condition in self._placement_conditions:
+                if not condition(point):
+                    break
+            else:
+                return point
+
+        return None
 
     def setup(self):
         """
         Creates the points on the grid, such that no two lie closer together than a constant given in configuration.
         :return: None
         """
+        print("setup")
         for i in range(self.n_nodes):
-            while True:
-                point = self.P.random(upper_bound=self.grid_size)
-                for target in self.real_node_coords:
-                    if point.distance_to(target) < config["grid"]["min_node_real_distance"]:
-                        break
-                else:
-                    self.real_node_coords.append(point)
-                    break
+            point = self.get_random_node_placement()
+            if point is None:
+                raise RecursionError("Not possible to fit another node onto grid under current configuration")
+
+            self.real_node_coords.append(point)
+
+        print("[GRID] Setup finished.")
 
     def get_true_position(self, node_id: int):
         """
@@ -220,7 +240,7 @@ class Grid(Generic[P]):
         return hops
 
 
-    def plot(self, network: Network):
+    def _plot(self, network: Network):
         """
         Plots the network and connections.
         :param network: Network describing the nodes
@@ -228,27 +248,16 @@ class Grid(Generic[P]):
         """
         fig, (ax, ax2) = plt.subplots(1, 2)
         fig.set_size_inches(20, 10)
+        ax.set_xlim(0, self.grid_size)
+        ax.set_ylim(0, self.grid_size)
+        ax2.set_xlim(0, self.grid_size)
+        ax2.set_ylim(0, self.grid_size)
 
         xs = [point[0] for point in self.real_node_coords]
         ys = [point[1] for point in self.real_node_coords]
 
-        # lines = []
-        # for p1, p2 in itertools.product(range(self.n_nodes), repeat=2):
-        #     if p1 == p2:
-        #         continue
-        #     if self.get_true_distance(p1, p2) is None:
-        #         continue
-        #     lines.append([self.real_node_coords[p1].xyz, self.real_node_coords[p2].xyz])
-
         lines = []
-        for p1, p2 in [(11, 66), (66, 24), (24, 4),
-                       (11, 52), (52, 77), (77, 23), (23, 40),
-                       (11, 6), (6, 29),
-                       (11, 74), (74, 13), (13, 26),
-                       (11, 74), (74, 32), (32, 54),
-                       (11, 28), (28, 60), (60, 70),
-                       (11, 10), (10, 21),
-                       (11, 10), (10, 35), (35, 69)]:
+        for p1, p2 in itertools.product(range(self.n_nodes), repeat=2):
             if p1 == p2:
                 continue
             if self.get_true_distance(p1, p2) is None:
@@ -268,14 +277,20 @@ class Grid(Generic[P]):
         lines2 = [[node.position.xyz, self.real_node_coords[node._id].xyz] for node in network.nodes()]
 
         lc2 = LineCollection(lines2, zorder=1)
-        ax2.set_xlim(0, self.grid_size)
-        ax2.set_ylim(0, self.grid_size)
+
         ax2.add_collection(lc2)
         ax2.scatter(calc_xs, calc_ys, c="r", zorder=2)
+
         for id in range(len(self.real_node_coords)):
             ax2.annotate(str(id), (calc_xs[id]+.06, calc_ys[id]+.06), zorder=3)
 
+        return fig, (ax, ax2)
+
+    def plot(self, network: Network):
+        self._plot(network)
         plt.show()
+
+
 
 
 if __name__ == '__main__':

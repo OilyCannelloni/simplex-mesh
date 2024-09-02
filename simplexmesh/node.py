@@ -155,6 +155,11 @@ class Node(ABC):
         pass
 
 
+class DummyNode(Node, ABC):
+    def try_measure_new_length(self):
+        pass
+
+
 class BasicStrategyNode(Node, ABC):
     def __init__(self, id: int, network: Network, grid: Grid):
         super().__init__(id, network, grid)

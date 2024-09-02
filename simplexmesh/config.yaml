@@ -15,6 +15,9 @@ grid:
     min_node_real_distance: 1.2
     n_anchors: 8
     n_required_anchors: 8
+    walls:
+        - [5, 2, 1, 7]
+        - [6, 8, 3, 1]
 
 
 measurement:
